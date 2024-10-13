@@ -1,0 +1,270 @@
+{% extends 'base.html' %} {% load static %}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+{% block title %} Home - Twitter {% endblock %} {% block content %}
+
+<div class="container my-4">
+  <div class="d-flex justify-content-center">
+    <a href="{% url 'home' %}" class="btn btn-outline-primary me-2">For You</a>
+    <a href="{% url 'home' %}?following=true" class="btn btn-outline-secondary"
+      >Following</a
+    >
+  </div>
+</div>
+
+<!-- Novo Tweet -->
+<section id="new-tweet" class="container my-4">
+  <form method="POST" class="bg-light p-3 rounded shadow-sm border">
+    <div class="d-flex align-items-center mb-3">
+      <img
+        src="{{ user.image.url }}"
+        class="rounded-circle me-3"
+        width="50"
+        height="50"
+        alt="Profile"
+      />
+      <textarea
+        id="tweetContent"
+        name="content"
+        class="form-control"
+        rows="2"
+        placeholder="O que está acontecendo?"
+        required
+      ></textarea>
+    </div>
+    <div class="d-flex justify-content-between align-items-center">
+      {% csrf_token %}
+      <button type="button" id="toggleEmojiPicker" class="btn btn-light">
+        🥳 Emojis
+      </button>
+      <emoji-picker
+        id="emojiPicker"
+        class="btn-light"
+        style="display: none"
+      ></emoji-picker>
+      <button type="submit" class="btn btn-primary">Tweet</button>
+    </div>
+  </form>
+</section>
+
+<!-- Modal -->
+<div
+  class="modal fade"
+  id="retweetModal"
+  tabindex="-1"
+  aria-labelledby="retweetModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="retweetModalLabel">Retweetar</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p id="originalTweetContent"></p>
+        <textarea
+          id="retweetContent"
+          rows="4"
+          cols="50"
+          placeholder="Adicione um comentário..."
+        ></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" id="submitRetweet">
+          Retweetar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lista de Tweets -->
+<section id="tweets" class="container my-4">
+  <ul class="list-group list-group-flush">
+    {% for tweet in tweets %}
+    <li
+      class="list-group-item p-3 border rounded shadow-sm mb-3"
+      id="tweet-{{ tweet.id }}"
+    >
+      <div class="d-flex">
+        <img
+          src="{{ tweet.user.image.url }}"
+          class="rounded-circle me-3"
+          width="50"
+          height="50"
+          alt="Profile"
+        />
+        <div class="flex-grow-1">
+          <div class="d-flex justify-content-between">
+            <div>
+              <a
+                href="{% url 'user_profile' tweet.user.id %}"
+                class="fw-bold text-dark"
+                >{{ tweet.user.username }}</a
+              >
+              <span class="text-muted ms-2"
+                >@{{ tweet.user.username }} · {{ tweet.created_at|timesince }}
+                ago</span
+              >
+            </div>
+            <div>
+              <small class="text-muted">{{ tweet.created_at }}</small>
+            </div>
+          </div>
+
+          <!-- Exibir conteúdo do tweet ou retweet -->
+
+          {% if tweet.retweet_content %}{% endif %}
+
+          <div class="mb-1">
+            {% if tweet.is_retweet %}
+            <a
+              href="{% url 'tweet' tweet.id %}"
+              class="text-decoration-none text-dark"
+            >
+              <p id="tweet-content-{{tweet.id}}">{{ tweet.retweet_content }}</p>
+            </a>
+
+            <a
+              href="{% url 'tweet' tweet.id %}"
+              class="text-decoration-none text-dark"
+            >
+              <p class="text-muted">
+                Retweet de {# / #} @{{ tweet.original_tweet.user.username }}:
+                <br />
+                <small id="tweet-retweet-{{tweet.original_tweet.id}}">
+                  {{ tweet.original_tweet.content }}
+                </small>
+              </p>
+            </a>
+            {% else %}
+            <a
+              href="{% url 'tweet' tweet.id %}"
+              class="text-decoration-none text-dark"
+            >
+              <p id="tweet-content-{{tweet.id}}">{{ tweet.content }}</p>
+            </a>
+            {% endif %}
+          </div>
+
+          <div
+            class="d-flex justify-content-start align-items-center mt-2"
+            data-tweet-id="{{ tweet.id }}"
+          >
+            <button
+              id="like-button"
+              class="btn btn-link text-muted p-0 me-3"
+              data-liked="{% if tweet.id in liked_tweet_ids %}true{% else %}false{% endif %}"
+            >
+              <i
+                class="btn-link {% if tweet.id in liked_tweet_ids %}fas{% else %}far{% endif %} fa-heart"
+              ></i>
+              <span id="like-count">{{ tweet.tweet_likes.count }}</span>
+              <span id="like-text"
+                >{% if tweet.id in liked_tweet_ids %}Descurtir{% comment %}
+                /////////{% endcomment %}{% else %}Curtir{% endif %}</span
+              >
+            </button>
+            <button
+              id="retweet-button-{{ tweet.id }}"
+              class="btn btn-link text-muted p-0 me-3"
+              onclick="openRetweetModal({{ tweet.id }})"
+            >
+              <i class="btn-link fas fa-retweet"></i>
+              <span id="retweet-count-{{ tweet.id }}"
+                >{{ tweet.retweet_count }}</span
+              >
+            </button>
+            <button class="btn btn-link text-muted p-0 me-3">
+              <i class="btn-link fas fa-comment"></i>
+              <span>{{ tweet.comments.count }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </li>
+    {% empty %}
+    <li class="list-group-item">Nenhum tweet disponível.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1.0.0/emoji-picker.js"></script>
+<script src="{% static 'js/like.js' %}"></script>
+<script src="{% static 'js/retweet.js' %}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const picker = document.getElementById("emojiPicker");
+    const input = document.getElementById("tweetContent");
+    const toggleButton = document.getElementById("toggleEmojiPicker");
+    const modal = new bootstrap.Modal(document.getElementById("retweetModal"));
+
+    picker.addEventListener("emoji-click", (event) => {
+      input.value += event.detail.unicode;
+    });
+
+    toggleButton.addEventListener("click", () => {
+      picker.style.display = picker.style.display === "none" ? "block" : "none";
+    });
+
+    window.addEventListener("click", (event) => {
+      if (
+        picker.style.display === "block" &&
+        !picker.contains(event.target) &&
+        !event.target.matches("#toggleEmojiPicker")
+      ) {
+        picker.style.display = "none";
+      }
+    });
+
+    const csrfToken = "{{ csrf_token }}"; // Obter o token CSRF
+
+    document.querySelectorAll(".btn-link").forEach((button) => {
+      if (button.id.startsWith("retweet-button-")) {
+        button.addEventListener("click", () => {
+          const tweetId = button.id.split("-")[2]; // Obtém o tweetId do ID do botão
+          openRetweetModal(tweetId, csrfToken, modal);
+        });
+      } else {
+        button;
+      }
+    });
+
+    document.querySelectorAll("#retweet-button").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const tweetId = button.closest("div").dataset.tweetId;
+        const csrfToken = "{{ csrf_token }}";
+
+        await retweet(tweetId, csrfToken);
+        modal.hide();
+      });
+    });
+
+    document.querySelectorAll("#like-button").forEach((button) => {
+      button.addEventListener("click", function () {
+        const tweetId = button.closest("div").dataset.tweetId;
+        const likeCountElement = this.querySelector("#like-count");
+        const textElement = this.querySelector("#like-text");
+        const iconElement = this.querySelector("i");
+
+        handleLikeButtonClick(
+          this,
+          tweetId,
+          csrfToken,
+          textElement,
+          likeCountElement,
+          iconElement
+        );
+      });
+    });
+  });
+</script>
+{% endblock %}

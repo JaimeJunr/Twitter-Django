@@ -1,0 +1,65 @@
+{% extends 'base.html' %} {% block title %} Perfil de {{ user.username }} -
+Twitter {% endblock %} {% block content %} {% load form_filters %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <!-- Seção do Perfil -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body text-center">
+          <!-- Verifique se o usuário tem uma imagem definida -->
+          <img
+            src="{{ user.image.url }}"
+            alt="{{ user.username }}"
+            class="rounded-circle img-fluid mb-3"
+            style="width: 150px; height: 150px; object-fit: cover"
+          />
+          <h2 class="mb-1">{{ user.username }}</h2>
+          <p class="text-muted">{{ user.email }}</p>
+          <p class="text-muted">Ingressou em: {{ user.created_at }}</p>
+        </div>
+      </div>
+
+      <!-- Seção de Atualização de Imagem de Perfil -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h4 class="card-title mb-3">Atualizar Imagem de Perfil</h4>
+          <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="image" class="form-label">Escolher nova imagem</label>
+              {{ form.image|addclass:"form-control-file" }}
+            </div>
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary mt-3">
+                Atualizar Perfil
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Seção de Seguidores -->
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h4 class="card-title mb-3">Seguidores</h4>
+          <p>{{ user.followers.count }} Seguidores</p>
+          {% if user.followers.all %}
+          <ul class="list-group">
+            {% for follower in user.followers.all %}
+            <li class="list-group-item">
+              <a href="{% url 'user_profile' follower.id %}"
+                >{{ follower.username }}</a
+              >
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted">Nenhum seguidor ainda.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

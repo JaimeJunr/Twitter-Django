@@ -1,0 +1,139 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+<div class="container mt-4">
+  <!-- Tweet principal -->
+  <div class="d-flex align-items-start pb-3 border-bottom">
+    <img
+      src="{{ tweet.user.image.url }}"
+      alt="{{ tweet.user.username }}'s avatar"
+      class="rounded-circle me-3"
+      width="48"
+      height="48"
+    />
+    <div class="flex-grow-1">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <strong>{{ tweet.user.username }}</strong>
+          <span class="text-muted ms-1">@{{ tweet.user.username }}</span>
+          <small class="text-muted ms-2"
+            >{{ tweet.created_at|timesince }} atrás</small
+          >
+        </div>
+      </div>
+      <p class="mb-0 mt-2">{{ tweet.content }}</p>
+      <div
+        class="d-flex justify-content-start align-items-center mt-2 text-muted"
+      >
+        <button
+          class="btn btn-link text-muted p-0 me-3 like-button"
+          data-tweet-id="{{ tweet.id }}"
+          data-liked="{% if tweet.id in liked_tweet_ids %}true{% else %}false{% endif %}"
+        >
+          <i
+            class="{% if tweet.id in liked_tweet_ids %}fas{% else %}far{% endif %} fa-heart"
+          ></i>
+          <span id="like-count">{{ tweet.likes.count }}</span>
+          <span id="like-button"
+            >{% if tweet.id in liked_tweet_ids %}Descurtir{% comment %}
+            /////////{% endcomment %}{% else %}Curtir{% endif %}</span
+          >
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seção de comentários -->
+  <div class="mt-4">
+    <h6 class="text-muted">Comentários</h6>
+    {% if comments %}
+    <ul class="list-unstyled">
+      {% for comment in comments %}
+      <li class="mb-3 comment">
+        <div class="d-flex align-items-start">
+          <img
+            src="{{ comment.user.image.url }}"
+            alt="{{ comment.user.username }}'s avatar"
+            class="rounded-circle me-2"
+            width="36"
+            height="36"
+          />
+          <div class="flex-grow-1">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>{{ comment.user.username }}</strong>
+                <span class="text-muted ms-1"
+                  >@{{ comment.user.username }}</span
+                >
+                <small class="text-muted ms-2"
+                  >{{ comment.created_at|timesince }} atrás</small
+                >
+              </div>
+            </div>
+
+            <p class="mb-0 mt-2">{{ comment.content }}</p>
+            <div class="d-flex justify-content-start align-items-center mt-2">
+              <a href="{% url 'comment_tweet' tweet.id %}" class="btn p-0">
+                <i class="fas fa-reply"></i> Responder
+              </a>
+            </div>
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-muted">Nenhum comentário ainda.</p>
+    {% endif %}
+  </div>
+
+  <!-- Formulário para adicionar novo comentário -->
+  <div class="mt-4">
+    <form action="{% url 'comment_tweet' tweet.id %}" method="POST">
+      {% csrf_token %}
+      <div class="mb-3">
+        <textarea
+          name="content"
+          class="form-control"
+          rows="3"
+          placeholder="Tweet sua resposta"
+          required
+        ></textarea>
+      </div>
+      <button
+        type="submit"
+        class="btn btn-primary btn-sm"
+        style="border-radius: 20px"
+      >
+        Responder
+      </button>
+    </form>
+  </div>
+</div>
+<script src="{% static 'js/like.js' %}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Selecionar todos os botões de curtida e adicionar o evento de clique
+    document.querySelectorAll(".like-button").forEach((button) => {
+      button.addEventListener("click", function () {
+        const tweetId = this.dataset.tweetId;
+        const csrfToken = "{{ csrf_token }}";
+
+        const iconElement =
+          this.closest(".flex-grow-1").querySelector(".fa-heart");
+        const likeCountElement =
+          this.closest(".flex-grow-1").querySelector("#like-count");
+        const textElement =
+          this.closest(".flex-grow-1").querySelector("#like-button");
+
+        handleLikeButtonClick(
+          this,
+          tweetId,
+          csrfToken,
+          textElement,
+          likeCountElement,
+          iconElement
+        );
+      });
+    });
+  });
+</script>
+{% endblock %}
