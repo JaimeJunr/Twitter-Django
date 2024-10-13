@@ -1,45 +1,31 @@
-{% extends 'base.html' %} {% block title %}Login{% endblock %}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
 {% block content %}
 <div class="container container-600px my-5">
-  <h2 class="mb-4">Login</h2>
+    <h2 class="mb-4">Login</h2>
 
-  <form method="post" class="bg-light p-4 rounded shadow">
-    {% csrf_token %}
+    <form method="post" class="bg-light p-4 rounded shadow">
+        {% csrf_token %}
 
-    <div class="form-group mb-3">
-      <label for="username">Nome de Usuário:</label>
-      <input
-        type="text"
-        name="username"
-        class="form-control"
-        id="username"
-        placeholder="Digite seu nome de usuário"
-        required
-      />
-    </div>
+        <div class="form-group mb-3">
+            <label for="{{ form.username.id_for_label }}">Nome de Usuário:</label>
+            {{ form.username }}  {# Renderiza o campo diretamente #}
+            {% for error in form.username.errors %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
 
-    <div class="form-group mb-4">
-      <label for="password">Senha:</label>
-      <input
-        type="password"
-        name="password"
-        class="form-control"
-        id="password"
-        placeholder="Digite sua senha"
-        required
-      />
-    </div>
+        <div class="form-group mb-3">
+            <label for="{{ form.password.id_for_label }}">Senha:</label>
+            {{ form.password }}  {# Renderiza o campo diretamente #}
+            {% for error in form.password.errors %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
 
-    <button type="submit" class="btn btn-primary btn-block">Login</button>
-
-    <p class="mt-3 text-center">
-      Não tem uma conta?
-      <a href="{% url 'register' %}">Cadastre-se</a>.
-    </p>
-  </form>
+        <button type="submit" class="btn btn-primary">Entrar</button>
+    </form>
 </div>
-
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const form = document.querySelector("form");

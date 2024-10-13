@@ -1,6 +1,6 @@
 # forms.py
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from user.models import (
     User,
     Comment,
@@ -38,6 +38,19 @@ class UserRegisterForm(UserCreationForm):
         if User.objects.filter(email=email).exists():
             raise ValidationError("Este email já está em uso.")
         return email
+
+
+class CustomAuthenticationForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Digite seu nome de usuário'
+        })
+        self.fields['password'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Digite sua senha'
+        })
 
 
 class ProfileImageForm(forms.ModelForm):

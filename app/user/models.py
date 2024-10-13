@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.forms import ValidationError
+from django import forms
+
 
 
 class User(AbstractUser):
@@ -26,46 +28,27 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        verbose_name = "User"
-        verbose_name_plural = "Users"
-        ordering = ["-created_at"]  # Usuários mais recentes primeiro
-
     def update_follower_count(self):
         """Atualiza o contador de seguidores."""
         self.follower_count = self.followers.count()
-        self.save(update_fields=['follower_count'])
+
 
     def update_following_count(self):
         """Atualiza o contador de seguidos."""
         self.following_count = self.followings.count()
-        self.save(update_fields=['following_count'])
-        
-    def validate_email(self, value):
-        """Valida se o email é único e não está em uso por outro usuário."""
-        if User.objects.filter(email=value).exists():
-            raise ValidationError("Email já está em uso.")
-        return value
-
-        
-    def clean_username(self):
-        """Valida se o nome de usuário é único."""
-        username = self.cleaned_data.get("username")
-        if User.objects.filter(username=username).exists():
-            raise ValidationError("Nome de usuário já está em uso.")
-        return username
 
     def save(self, *args, **kwargs):
-        """Atualiza os contadores de seguidores e seguindo após salvar o usuário."""
-        self.clean_username()
-        self.validate_email()
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
         self.update_follower_count()
         self.update_following_count()
-        super().save()
+
+        if not is_new:
+            super().save(update_fields=['follower_count', 'following_count'])
+            
 
     def __str__(self):
         return f"{self.username} ({self.email})"
-
 
 class Tweet(models.Model):
     """Modelo para representar um tweet."""

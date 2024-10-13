@@ -1,24 +1,56 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import authenticate
+from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.views import View
+from django.utils.decorators import method_decorator
 from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse, HttpResponseBadRequest
+from django.contrib.auth.forms import AuthenticationForm
 
-from .forms import UserRegisterForm, ProfileImageForm, CommentForm
-from user.models import Follow, Tweet, Like, User, Comment
+from .forms import UserRegisterForm, ProfileImageForm, CommentForm, CustomAuthenticationForm
 
 from django.urls import reverse_lazy
 
+from user.models import Like, User, Comment, Tweet, Follow
+
+
 class CustomLoginView(LoginView):
-    template_name = 'login.html'  # Altere para o nome do seu app e template
-    success_url = reverse_lazy('home')  # Altere para a URL de redirecionamento após login
-    
+    template_name = 'login.html'  # Verifique se este caminho está correto
+    form_class = CustomAuthenticationForm  # Use a forma personalizada para o login
+
+    def get_success_url(self):
+        # Obtém a URL 'next' da requisição, se disponível
+        next_url = self.request.GET.get('next')
+
+        # Verifica se a URL 'next' é segura antes de redirecionar
+        if next_url and is_safe_url(url=next_url, allowed_hosts=self.request.get_host()):
+            return next_url
+
+        return reverse_lazy('home')
+
     def form_invalid(self, form):
         messages.error(self.request, "Nome de usuário ou senha inválidos.")
         return super().form_invalid(form)
+
+
+@method_decorator(csrf_protect, name='dispatch')
+def custom_login_view(request):
+    if request.method == "POST":
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            return redirect('home')  # Redireciona após o login
+        else:
+            messages.error(request, "Nome de usuário ou senha inválidos.")
+
+    return render(request, 'login.html')
 
 def custom_logout(request):
     logout(request)
@@ -85,7 +117,6 @@ def retweet(request, tweet_id):
     user = request.user
     content = request.POST.get("content", "").strip()
     
-    print(content)
 
     already_retweeted = Tweet.objects.filter(
         user=user, original_tweet=original_tweet, is_retweet=True
