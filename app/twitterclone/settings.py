@@ -26,10 +26,7 @@ SECRET_KEY = os.getenv(
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
 # Configure allowed hosts for production
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") or [
-    "localhost",
-    'jaimejunr.pythonanywhere.com']
- # Defina como uma variável de ambiente
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,jaimejunr.pythonanywhere.com").split(",")
 
 
 LOGIN_URL = 'login'  # Nome da URL de login
