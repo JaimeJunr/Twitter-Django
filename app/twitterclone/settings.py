@@ -26,10 +26,7 @@ SECRET_KEY = os.getenv(
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
 # Configure allowed hosts for production
-ALLOWED_HOSTS = [
-    'localhost',
-    'jaimejunr.pythonanywhere.com',
-]
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,jaimejunr.pythonanywhere.com").split(",")
 
 
 LOGIN_URL = 'login'  # Nome da URL de login
@@ -49,9 +46,6 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-
-ALLOWED_HOSTS = []
 
 
 # Application definition
