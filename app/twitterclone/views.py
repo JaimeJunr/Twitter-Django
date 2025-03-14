@@ -9,6 +9,7 @@ from django.contrib.auth.views import LoginView
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.forms import AuthenticationForm
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from .forms import UserRegisterForm, ProfileImageForm, CommentForm, CustomAuthenticationForm
 
@@ -26,7 +27,8 @@ class CustomLoginView(LoginView):
         next_url = self.request.GET.get('next')
 
         # Verifica se a URL 'next' é segura antes de redirecionar
-        if next_url and is_safe_url(url=next_url, allowed_hosts=self.request.get_host()):
+        if next_url and url_has_allowed_host_and_scheme(url=next_url, allowed_hosts={self.request.get_host()}):
+
             return next_url
 
         return reverse_lazy('home')
@@ -118,21 +120,22 @@ def retweet(request, tweet_id):
     content = request.POST.get("content", "").strip()
     
 
-    already_retweeted = Tweet.objects.filter(
-        user=user, original_tweet=original_tweet, is_retweet=True
-    ).exists()
+    # Criar o retweet corretamente
+    retweet = Tweet.objects.create(
+        user=user,
+        original_tweet= original_tweet,
+        is_retweet=True,
+        content=content,
+        retweet_content=content
+    )
+    # Adiciona o retweet na lista de retweets do tweet original
+    original_tweet.retweets.add(user)
 
-    if already_retweeted:
-        HttpResponseBadRequest("Você já retweetou este tweet.")
-    else:
-        
-        retweet = Tweet.objects.create(user=user, original_tweet=original_tweet, is_retweet=True, retweet_content=content)
+    # Salva a atualização do tweet original
+    original_tweet.save()
 
- 
-        messages.success(request, "Retweet feito com sucesso!")
-        print(Tweet.retweet_count())
-    
-    return JsonResponse({"retweetCount": 0})
+    messages.success(request, "Retweet feito com sucesso!")
+    return JsonResponse({"retweetCount": original_tweet.retweet_count()})
 
 
 @login_required

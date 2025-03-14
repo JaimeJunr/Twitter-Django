@@ -14,7 +14,7 @@ class User(AbstractUser):
         max_length=1000,
         null=True,
         blank=True,
-        default="default.png",
+        default="user_images/default.png",
     )
     bio = models.TextField(max_length=160, blank=True)  # Campo de bio para usuários
     website = models.URLField(
@@ -77,10 +77,10 @@ class Tweet(models.Model):
         ordering = ["-created_at"]  # Tweets mais recentes primeiro
 
     def __str__(self):
-        if self.is_retweet and not self.retweet_comment:
+        if self.is_retweet and not self.retweet_content:
             return f"Retweet de {self.original_tweet.user.username}"
-        elif self.is_retweet and self.retweet_comment:
-            return f"{self.user.username} comentou no retweet: {self.retweet_comment[:50]}..."
+        elif self.is_retweet and self.retweet_content:
+            return f"{self.user.username} comentou no retweet: {self.retweet_content[:50]}..."
         else:
             return self.content[:50] + "..." if len(self.content) > 50 else self.content
 
@@ -88,13 +88,18 @@ class Tweet(models.Model):
         """Validações personalizadas."""
         if self.is_retweet and not self.original_tweet:
             raise ValidationError("Um retweet deve ter um tweet original.")
+        
+        # Verifica se não é retweet e o conteúdo está vazio
         if not self.is_retweet and not self.content.strip():
             raise ValidationError("O conteúdo do tweet não pode ser vazio ou apenas espaços em branco.")
-        if self.is_retweet and not self.content.strip() and not self.retweet_comment.strip():
-            raise ValidationError("Retweet sem comentário deve estar vazio no campo 'content'.")
-        if self.is_retweet and len(self.retweet_comment) > 280:
-            raise ValidationError("O comentário do retweet não pode exceder 280 caracteres.")
         
+        # Verifica se é um retweet
+        if self.is_retweet:
+            if not self.retweet_content.strip() and not self.content.strip():
+                # Se não tiver comentário (retweet_content) nem conteúdo (content)
+                raise ValidationError("Retweet sem comentário deve estar vazio no campo 'content'.")
+            if len(self.retweet_content) > 280:
+                raise ValidationError("O comentário do retweet não pode exceder 280 caracteres.")
 
     def like_count(self):
         return self.likes.count()
@@ -110,7 +115,6 @@ class Tweet(models.Model):
         self.clean()  # Chama a validação personalizada
         super().save(*args, **kwargs)
         
-
 
 
 class Like(models.Model):

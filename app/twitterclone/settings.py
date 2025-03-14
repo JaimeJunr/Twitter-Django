@@ -26,7 +26,7 @@ SECRET_KEY = os.getenv(
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
 # Configure allowed hosts for production
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,jaimejunr.pythonanywhere.com").split(",")
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,jaimejunr.pythonanywhere.com,127.0.0.1").split(",")
 
 
 LOGIN_URL = 'login'  # Nome da URL de login
@@ -128,8 +128,10 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [BASE_DIR / "static"]  # Mantenha a pasta de estáticos organizada
-STATIC_ROOT = BASE_DIR / "static"  # ou qualquer outro diretório que preferir
+
+STATICFILES_DIRS = [BASE_DIR / "staticfiles"]  # Pasta para arquivos estáticos durante o desenvolvimento
+STATIC_ROOT = BASE_DIR / "static"  # Pasta onde os arquivos serão coletados com collectstatic
+
 
 
 # Default primary key field type
