@@ -1,42 +1,3 @@
-// Função para retweetar
-async function retweet(tweetId, csrfToken) {
-  const retweetContent = document.getElementById("retweetContent").value.trim();
-
-  try {
-    console.log("Id:",tweetId)
-    console.log("Conteudo:", retweetContent)
-
-    const formData = new URLSearchParams();
-    formData.append("content", retweetContent);
-
-    const response = await fetch(`/tweet/${tweetId}/retweet/`, {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrfToken,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: formData.toString(), // Envia os dados como um formulário normal
-    });
-
-    if (!response.ok) {
-      console.log(response.message);
-    }
-
-    const data = await response.json(); // Obtenha a resposta em JSON
-
-    // Atualiza a UI com o novo número de retweets
-    updateRetweetUI(tweetId, data.retweetCount);
-
-    // Fecha a modal após o retweet e limpa o campo de comentário
-    const modal = bootstrap.Modal.getInstance(document.getElementById('retweetModal'));
-    modal.hide();
-    document.getElementById("retweetContent").value = ""; // Limpar campo
-
-  } catch (error) {
-    console.error("Erro ao retweetar:", error.message);
-    alert("Ocorreu um erro ao tentar retweetar. Por favor, tente novamente.");
-  }
-}
 
 // Função para atualizar o contador de retweets na interface
 function updateRetweetUI(tweetId, retweetCount) {
@@ -45,6 +6,64 @@ function updateRetweetUI(tweetId, retweetCount) {
     retweetCountElement.textContent = retweetCount;
   }
 }
+
+
+async function retweet(tweetId, csrfToken) {
+    const retweetContent = document.getElementById("retweetContent").value.trim();
+
+    try {
+
+        const formData = new URLSearchParams();
+        formData.append("content", retweetContent);
+
+        const response = await fetch(`/tweet/${tweetId}/retweet/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: formData.toString(),
+        });
+
+        if (!response.ok) {
+            console.error("Erro na resposta:", response.status, response.statusText);
+            alert("Ocorreu um erro ao tentar retweetar. Por favor, tente novamente.");
+            return;
+        }
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.error("Resposta não é JSON:", await response.text());
+            alert("Ocorreu um erro ao tentar retweetar. Resposta inválida do servidor.");
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            console.error("Erro do servidor:", data.error);
+            alert("Ocorreu um erro ao tentar retweetar. Por favor, tente novamente.");
+            return;
+        }
+
+        // Atualiza a UI com o novo número de retweets
+        updateRetweetUI(tweetId, data.retweetCount);
+
+        // Fecha a modal após o retweet e limpa o campo de comentário
+
+             // Recarrega a página para atualizar os tweets
+        window.location.reload();
+
+        document.getElementById("retweetContent").value = "";
+
+   
+
+    } catch (error) {
+        console.error("Erro ao retweetar:", error.message);
+        alert("Ocorreu um erro ao tentar retweetar. Por favor, tente novamente.");
+    }
+}
+
 
 // Função para abrir a modal e preencher o conteúdo original
 async function openRetweetModal(tweetId, csrfToken, modal) {

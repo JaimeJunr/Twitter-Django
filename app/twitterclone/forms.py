@@ -58,7 +58,22 @@ class ProfileImageForm(forms.ModelForm):
         model = User
         fields = ["image"]  # Este campo deve estar presente no seu modelo personalizado
 
+class CoverImageForm(forms.ModelForm): # Adicionado o formulario CoverImageForm
+    class Meta:
+        model = User
+        fields = ['cover_image']
 
+    
+class ProfileInfoForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'bio'] # adicionado os campos first_name e last_name
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        if username != self.instance.username and User.objects.filter(username=username).exists():
+            raise forms.ValidationError('Este username já está em uso.')
+        return username
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
@@ -72,3 +87,7 @@ class CommentForm(forms.ModelForm):
                 }
             ),
         }
+
+
+class TweetForm(forms.Form):
+    content = forms.CharField(max_length=280, widget=forms.Textarea(attrs={'id': 'tweetContent'}))

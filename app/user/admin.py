@@ -1,11 +1,30 @@
 from django.contrib import admin
-from .models import Tweet
+from .models import Tweet, User, Follow, Retweets
 
 @admin.register(Tweet)
 class TweetAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "content", "is_retweet", "original_tweet", "retweet_content", "retweet_count")
+    list_display = ("id", "user", "content", "is_retweet", "original_tweet")
 
-    # Método personalizado para contar retweets
     def retweet_count(self, obj):
-        return obj.retweet_count()  # Usa o método que você já criou na model
-    retweet_count.short_description = 'Retweets'  # Nome amigável para o campo
+        return Retweets.objects.filter(retweeted_tweet=obj).count()
+    retweet_count.short_description = 'Retweets'
+
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    list_display = ("id", "username", "email", "bio", "follower_count", "following_count")
+
+    def follower_count(self, obj):
+        return obj.followers.count()
+    follower_count.short_description = 'Followers'
+
+    def following_count(self, obj):
+        return obj.followings.count()
+    following_count.short_description = 'Following'
+
+@admin.register(Follow)
+class FollowAdmin(admin.ModelAdmin):
+    list_display = ("id", "follower", "following")
+
+@admin.register(Retweets)
+class RetweetsAdmin(admin.ModelAdmin):
+    list_display = ("id", "retweeted_tweet", "retweeted_by", "created_at")

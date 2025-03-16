@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
-      {% block title %}Twitter Clone{% endblock %}
+      {% block title %}Twitter Django{% endblock %}
     </title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
@@ -20,7 +20,7 @@
   <body>
     <header class="container-fluid p-3">
       <nav class="navbar navbar-expand-lg">
-        <a class="navbar-brand" href="{% url 'home' %}">Twitter Clone</a>
+        <a class="navbar-brand" href="{% url 'home' %}">Twitter Django</a>
         <button class="navbar-toggler"
                 type="button"
                 data-bs-toggle="collapse"
@@ -36,10 +36,7 @@
               <a class="nav-link" href="{% url 'home' %}">Home</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'perfil' %}">Perfil</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'home' %}">Configurações</a>
+              <a class="nav-link" href="{% url 'profile' %}">Perfil</a>
             </li>
             {% if user.is_authenticated %}
               <li class="nav-item">
@@ -61,7 +58,7 @@
       {% block content %}<!-- Conteúdo específico da página será inserido aqui -->{% endblock %}
     </main>
     <footer class="text-center p-3">
-      <p>&copy; 2025 Twitter Clone. Todos os direitos reservados.</p>
+      <p>&copy; 2025 Twitter Django. Todos os direitos reservados.</p>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"

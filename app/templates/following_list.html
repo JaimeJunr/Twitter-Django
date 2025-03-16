@@ -1,0 +1,54 @@
+<div class="col-md-9">
+    <div class="container card shadow-sm mb-4">
+        <ul class="list-group list-group-flush">
+            {% for follow in following %}
+                <li class="list-group-item d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        {% if follow.following.image %}
+                            <img src="{{ follow.following.image.url }}"
+                                 class="rounded-circle me-3"
+                                 width="50"
+                                 height="50"
+                                 alt="Profile" />
+                        {% else %}
+                            <img src="/media/default.png"
+                                 class="rounded-circle me-3"
+                                 width="50"
+                                 height="50"
+                                 alt="Profile" />
+                        {% endif %}
+                        <div>
+                            <a href="{% url 'user_profile'  follow.following.id %}"
+                               class="text-decoration-none fw-bold">{{ follow.following.username }}</a>
+                            {% if follow.following.bio %}<p class="mb-0 text-muted small">{{ follow.following.bio }}</p>{% endif %}
+                        </div>
+                    </div>
+                    {% if user != follow.following %}
+                        <form method="post" action="{% url 'follow_user' follow.following.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Deixar de Seguir</button>
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+        {% if following.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if following.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?tab=following&page={{ following.previous_page_number }}">Anterior</a>
+                        </li>
+                    {% endif %}
+                    {% if following.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?tab=following&page={{ following.next_page_number }}">Próximo</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</div>

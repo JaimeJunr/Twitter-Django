@@ -16,9 +16,7 @@ body {
   min-height: 100vh; 
 }
 
-.main-content {
-  flex-grow: 1;
-}
+
 
 /* Estilo do cabeçalho */
 header {
@@ -96,9 +94,6 @@ button {
   transition: background-color 0.3s; /* Transição suave na cor de fundo */
 }
 
-button:hover {
-  background-color: #0d8abf; /* Cor mais escura ao passar o mouse */
-}
 
 li .comment {
   background-color: #0d8abf;

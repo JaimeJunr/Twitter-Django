@@ -3,11 +3,12 @@ from django.contrib import admin
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from django.conf.urls.static import static
-from .views import ProfileView
 
 from django.conf import settings
 
 from .views import (
+    configuration_profile,
+    delete_tweet,
     home,
     register,
     custom_logout,
@@ -18,7 +19,6 @@ from .views import (
     comment_tweet,
     retweet,
     like_comment,
-    ProfileView,
     CustomLoginView
 )
 
@@ -38,8 +38,10 @@ urlpatterns = [
     path("register/", register, name="register"),
     
     # Perfis de usuários
-    path("profile/", perfil_view, name="perfil"),  # Perfil do usuário logado
-    path("profile/<int:user_id>/", ProfileView.as_view(), name="user_profile"),  # Perfis de outros usuários
+    path("profile/", perfil_view, name="profile"),
+    path("profile/configuration", configuration_profile, name="configuration_profile"),
+    path("profile/<int:user_id>/", perfil_view, name="profile"),
+
 
 
     # Tweets
@@ -47,8 +49,9 @@ urlpatterns = [
     path("tweet/<int:tweet_id>/comment/", comment_tweet, name="comment_tweet"),  # Comentar em um tweet
     path("tweet/<int:tweet_id>/retweet/", retweet, name="retweet"),  # Retweetar
     path("tweet/<int:tweet_id>/like/", like_tweet, name="like_tweet"),  # Curtir tweet
+    path("tweet/<int:tweet_id>/delete", delete_tweet, name="delete_tweet"),
     
-     # Ações relacionadas a comentários
+    # Ações relacionadas a comentários
     path("comment/<int:comment_id>/like/", like_comment, name="like_comment"),  # Curtir comentário
 
     # Seguir e deixar de seguir

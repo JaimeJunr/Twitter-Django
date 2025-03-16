@@ -1,80 +1,159 @@
-{% extends 'base.html' %} 
-{% block title %} Perfil de {{ user.username }} -Twitter {% endblock %} 
+{% extends 'base.html' %}
+{% block title %}Perfil de {{ user.username }} - Twitter{% endblock %}
 {% block content %}
-{% load form_filters %}
-<div class="container my-5">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
-      <!-- Seção do Perfil -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-body text-center">
-          {% if user.image %}
-          <img
-            src="{{ user.image.url }}"
-            alt="{{ user.username }}'s profile picture"
-            class="rounded-circle img-fluid mb-3"
-            style="width: 150px; height: 150px; object-fit: cover"
-          />
-          {% else %}
-          <img
-            src="/media/user_images/default.png"
-            alt="{{ user.username }}'s profile picture"
-            class="rounded-circle img-fluid mb-3"
-            style="width: 150px; height: 150px; object-fit: cover"
-          />
-          {% endif %}
-          <h2 class="mb-1">{{ user.username }}</h2>
-          <p class="text-muted">{{ user.email }}</p>
-          <p class="text-muted">Ingressou em: {{ user.created_at }}</p>
-          {% if user.bio %}
-          <p class="mb-1">{{ user.bio }}</p>
-          {% endif %} {% if user.location %}
-          <p class="text-muted">{{ user.location }}</p>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Seção de Atualização de Imagem de Perfil -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-body">
-          <h4 class="card-title mb-3">Atualizar Imagem de Perfil</h4>
-          <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <div class="form-group">
-              <label for="image" class="form-label">Escolher nova imagem</label>
-              {{ form.image|addclass:"form-control-file" }}
+  {% load static %}
+  {% load form_filters %}
+  <div class="my-5">
+    <div class="row justify-content-center">
+      <div class="container col-md-9 mb-4">
+        <div class="card shadow-sm">
+          <div class="card-body p-0 profile-header">
+            <div class="position-relative">
+              {% if user_profile.cover_image %}
+                <img src="{{ user_profile.cover_image.url }}"
+                     alt="{{ user_profile.username }}'s cover image"
+                     class="img-fluid w-100"
+                     style="max-height: 200px;
+                            object-fit: cover" />
+              {% else %}
+                <img src="{% static 'img/default_cover.png' %}"
+                     alt="Default cover image"
+                     class="img-fluid w-100"
+                     style="max-height: 200px;
+                            object-fit: cover" />
+              {% endif %}
+              <div class="position-absolute profile-picture-container">
+                {% if user_profile.image %}
+                  <img src="{{ user_profile.image.url }}"
+                       alt="{{ user_profile.username }}'s profile picture"
+                       class="rounded-circle border border-white border-3 profile-picture" />
+                {% else %}
+                  <img src="{% static 'img/default_profile.png' %}"
+                       alt="Default profile picture"
+                       class="rounded-circle border border-white border-3 profile-picture" />
+                {% endif %}
+              </div>
             </div>
-            <div class="d-grid gap-2">
-              <button type="submit" class="btn btn-primary mt-3">
-                Atualizar Perfil
-              </button>
+            <div class="p-3 mt-5">
+              <div class="d-flex justify-content-between ">
+                <div>
+                  {% if user_profile.first_name and user_profile.last_name %}
+                    <h4 class="card-title mb-1">{{ user_profile.first_name }} {{ user_profile.last_name }}</h4>
+                  {% else %}
+                    <h4 class="card-title mb-1">{{ user_profile.username }}</h4>
+                  {% endif %}
+                  <h6 class="text-muted">@{{ user_profile.username }}</h6>
+                  {% if user_profile.bio %}<p class="mb-1">{{ user_profile.bio }}</p>{% endif %}
+                  <p class="text-muted">Ingressou em: {{ user_profile.date_joined|date:"F Y" }}</p>
+                  <div class="follow-info">
+                    <a href="?tab=tweets" class="follow-link"><span>{{ user_profile.tweets.count }}</span> Tweets</a>
+                    <a href="?tab=followers" class="follow-link"><span>{{ user_profile.followers.count }}</span> Seguidores</a>
+                    <a href="?tab=following" class="follow-link"><span>{{ user_profile.followings.count }}</span> Seguindo</a>
+                  </div>
+                </div>
+                {% if not is_own_profile %}
+                  <form method="POST" action="{% url 'follow_user' user_profile.id %}">
+                    {% csrf_token %}
+                    {% if user_profile.id in followed_user_ids %}
+                      <button type="submit" class="btn btn-danger">Deixar de Seguir</button>
+                    {% else %}
+                      <button type="submit" class="btn btn-primary">Seguir</button>
+                    {% endif %}
+                  </form>
+                {% else %}
+                  <div class="config-button">
+                    <a href="{% url 'configuration_profile' %}"
+                       class="btn btn-primary"
+                       aria-label="Configurações do perfil">
+                      <i class="fa fa-cog" aria-hidden="true"></i>
+                    </a>
+                  </div>
+                {% endif %}
+              </div>
             </div>
-          </form>
+          </div>
+          <div class=" card shadow-sm">
+            <ul class="nav nav-tabs">
+              <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'tweets' %}active{% endif %}"
+                   href="?tab=tweets">Tweets</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'followers' %}active{% endif %}"
+                   href="?tab=followers">Seguidores</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'following' %}active{% endif %}"
+                   href="?tab=following">Seguindo</a>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
-
-      <!-- Seção de Seguidores -->
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h4 class="card-title mb-3">Seguidores</h4>
-          <p>{{ user.followers.count }} Seguidores</p>
-          {% if user.followers.all %}
-          <ul class="list-group">
-            {% for follower in user.followers.all %}
-            <li class="list-group-item">
-              <a href="{% url 'user_profile' follower.id %}"
-                >{{ follower.username }}</a
-              >
-            </li>
-            {% endfor %}
-          </ul>
-          {% else %}
-          <p class="text-muted">Nenhum seguidor ainda.</p>
-          {% endif %}
-        </div>
-      </div>
+      {% if active_tab == 'tweets' %}
+        {% include 'tweet_list.html' %}
+      {% elif active_tab == 'followers' %}
+        {% include 'follower_list.html' %}
+      {% elif active_tab == 'following' %}
+        {% include 'following_list.html' %}
+      {% endif %}
     </div>
   </div>
-</div>
+  <style>
+      .profile-header {
+          position: relative;
+      }
 
+      .cover-image {
+          height: 200px;
+          overflow: hidden;
+          position: relative;
+      }
+
+      .cover-image-img {
+          width: 100%;
+          height: auto;
+          display: block;
+          object-fit: cover;
+          min-height: 200px;
+      }
+
+
+      .profile-picture {
+          width: 120px;
+          height: 120px;
+          border-radius: 50%;
+          border: 4px solid white;
+          position: absolute;
+          right: -140px;
+          top: -60px;
+      }
+
+      .user-details {
+          margin-left: 140px;
+      }
+
+      .follow-info {
+          display: flex;
+          margin-top: 10px;
+      }
+
+      .follow-link {
+          margin-right: 20px;
+          color: #1da1f2;
+          text-decoration: none;
+      }
+
+      .follow-link span {
+          font-weight: bold;
+      }
+
+      .config-button {
+          margin-left: auto;
+      }
+
+      .nav-tabs .nav-link.active {
+          border-bottom: 2px solid #1da1f2;
+      }
+  </style>
 {% endblock %}

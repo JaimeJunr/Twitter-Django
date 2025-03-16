@@ -1,21 +1,25 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_protect
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.decorators import method_decorator
 from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse, HttpResponseBadRequest
-from django.contrib.auth.forms import AuthenticationForm
+from django.http import JsonResponse
 from django.utils.http import url_has_allowed_host_and_scheme
-
-from .forms import UserRegisterForm, ProfileImageForm, CommentForm, CustomAuthenticationForm
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .forms import CoverImageForm, ProfileInfoForm, TweetForm, UserRegisterForm, ProfileImageForm, CommentForm, CustomAuthenticationForm
+from django.core.cache import cache
+from django.db import transaction
 
 from django.urls import reverse_lazy
 
-from user.models import Like, User, Comment, Tweet, Follow
+from user.models import Like, Retweets, User, Comment, Tweet, Follow
+
+
+from django.views.generic import DetailView
 
 
 class CustomLoginView(LoginView):
@@ -61,36 +65,48 @@ def custom_logout(request):
 
 @login_required
 def home(request):
-    user = request.user  # Assume que você está autenticado
-    
-    # Verificando se está na aba "Para você" ou "Seguindo"
+    user = request.user
     following = request.GET.get("following", "false").lower() == "true"
+    page = request.GET.get('page')
     
     if following:
         following_users = user.followings.values_list("following_id", flat=True)
-        tweets = Tweet.objects.filter(user__in=following_users).order_by("-created_at")
-    
-        
+        tweets = Tweet.objects.filter(user__in=following_users).select_related('user').prefetch_related('tweet_likes', 'comments').order_by("-created_at")
     else:
-        # Mostra tweets recomendados para você
-        tweets = Tweet.objects.all().order_by("-created_at")
+        tweets = Tweet.objects.all().select_related('user').prefetch_related('tweet_likes', 'comments').order_by("-created_at")
+
+    paginator = Paginator(tweets, 10)
+    try:
+        tweets = paginator.page(page)
+    except PageNotAnInteger:
+        tweets = paginator.page(1)
+    except EmptyPage:
+        tweets = paginator.page(paginator.num_pages)
+
+
         
     liked_tweet_ids = list(
         Like.objects.filter(user=user).values_list("tweet_id", flat=True)
     )
     
+    form = TweetForm() #Cria o formulario antes de tudo
+
     if request.method == "POST":
-        content = request.POST.get("content")
-        if content:
+        form = TweetForm(request.POST) #Cria o formulario bound
+        if form.is_valid():
+            content = form.cleaned_data['content']
             Tweet.objects.create(user=user, content=content)
             messages.success(request, "Tweet criado com sucesso!")
             return redirect("home")
+        else:
+            messages.error(request, "Erro ao criar o tweet. Verifique os dados.")
     
 
     context = {
         "tweets": tweets,
         "liked_tweet_ids": liked_tweet_ids,
-        "fallowing": following 
+        "following": following,
+        "form": form, #adiciona o form ao contexto
     }
 
     return render(request, "home.html", context)
@@ -118,24 +134,44 @@ def retweet(request, tweet_id):
     original_tweet = get_object_or_404(Tweet, id=tweet_id)
     user = request.user
     content = request.POST.get("content", "").strip()
-    
+
+    if original_tweet is None:
+        messages.error(request, "Tweet original não encontrado.")
+        return redirect("home")
+
+    if user is None:
+        messages.error(request, "Usuário não encontrado.")
+        return redirect("home")
 
     # Criar o retweet corretamente
     retweet = Tweet.objects.create(
         user=user,
-        original_tweet= original_tweet,
+        original_tweet=original_tweet,
         is_retweet=True,
-        content=content,
-        retweet_content=content
+        content=content
     )
-    # Adiciona o retweet na lista de retweets do tweet original
-    original_tweet.retweets.add(user)
+
+    # Cria a instância de Retweets e associa os tweets
+    Retweets.objects.create(
+        retweeted_tweet=original_tweet,
+        retweeted_by=retweet
+    )   
 
     # Salva a atualização do tweet original
     original_tweet.save()
 
     messages.success(request, "Retweet feito com sucesso!")
-    return JsonResponse({"retweetCount": original_tweet.retweet_count()})
+
+    return JsonResponse({"retweetCount": original_tweet.retweets.count()})
+
+
+@login_required
+@require_POST
+def delete_tweet(request, tweet_id):
+    tweet = get_object_or_404(Tweet, id=tweet_id, user=request.user)
+    tweet.delete()
+    messages.success(request, "Tweet excluído com sucesso!")
+    return redirect("home")
 
 
 @login_required
@@ -178,47 +214,129 @@ def like_tweet(request, tweet_id):
     total_likes = tweet.tweet_likes.count()  # Contar o total de likes
     return JsonResponse({"liked": liked, "likes": total_likes})
 
+@login_required
+def configuration_profile(request):
+    if request.method == 'POST':
+        image_form = ProfileImageForm(request.POST, request.FILES, instance=request.user)
+        info_form = ProfileInfoForm(request.POST, instance=request.user)
+        cover_form = CoverImageForm(request.POST, request.FILES, instance=request.user)
+
+        if image_form.is_valid():
+            image_form.save()
+
+        if info_form.is_valid():
+            info_form.save()
+            messages.success(request, 'Perfil atualizado com sucesso!')
+        else:
+            messages.error(request, 'Erro ao atualizar informações do perfil.')
+            # Adicione esta linha para exibir os erros do formulário
+            for field, errors in info_form.errors.items():
+                for error in errors:
+                    print(f"{field}: {error}")
+                    messages.error(request, f"{field}: {error}")
+
+        if cover_form.is_valid():
+            cover_form.save()
+
+        return redirect('configuration_profile')
+    else:
+        image_form = ProfileImageForm(instance=request.user)
+        info_form = ProfileInfoForm(instance=request.user)
+        cover_form = CoverImageForm(instance=request.user)
+
+    context = {'image_form': image_form, 'info_form': info_form, 'cover_form': cover_form}
+
+    return render(request, "configuration_profile.html", context)
 
 @login_required
-def perfil_view(request):
+def perfil_view(request, user_id=None):
+    """ View para visualização e modificação do perfil do usuario """
+
+    if user_id:
+        user_profile = get_object_or_404(User, id=user_id)
+        is_own_profile = (request.user.id == user_id)
+    else:
+        user_profile = request.user
+        is_own_profile = True
+
+    
+    if is_own_profile:
+        if request.method == "POST":
+            form = ProfileImageForm(request.POST, request.FILES, instance=user_profile)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Imagem de perfil atualizada com sucesso!")
+                return redirect("profile")
+            else:
+                messages.error(request, "Erro ao atualizar a imagem de perfil.")
+        else:
+            form = ProfileImageForm(instance=user_profile)
+    else:
+        form = None
+    
+    active_tab = request.GET.get('tab', 'tweets')
+
     if request.method == "POST":
-        form = ProfileImageForm(request.POST, request.FILES, instance=request.user)
+        form = ProfileImageForm(request.POST, request.FILES, instance=user_profile)
         if form.is_valid():
             form.save()
             messages.success(request, "Imagem de perfil atualizada com sucesso!")
-            return redirect("perfil")  # Redireciona para a página de perfil3
+            return redirect("perfil")
         else:
             messages.error(request, "Erro ao atualizar a imagem de perfil.")
     else:
-        form = ProfileImageForm(instance=request.user)
+        form = ProfileImageForm(instance=user_profile)
 
-    return render(request, "perfil.html", {"form": form})
+    context = {
+        "form": form,
+        "user_profile": user_profile,
+        "is_own_profile": is_own_profile,
+        "active_tab": active_tab,
+    }
+
+    if active_tab == 'tweets':
+        tweets = Tweet.objects.filter(user=user_profile).select_related('user').prefetch_related('tweet_likes', 'comments').order_by("-created_at")
+        paginator = Paginator(tweets, 10)
+        page = request.GET.get('page')
+        try:
+            tweets = paginator.page(page)
+        except PageNotAnInteger:
+            tweets = paginator.page(1)
+        except EmptyPage:
+            tweets = paginator.page(paginator.num_pages)
+
+        liked_tweet_ids = list(Like.objects.filter(user=user_profile).values_list("tweet_id", flat=True))
+        context['tweets'] = tweets
+        context['liked_tweet_ids'] = liked_tweet_ids
+
+    else:
+        followers = Follow.objects.filter(following=user_profile).select_related('follower')
+        paginator = Paginator(followers, 10)
+        page = request.GET.get('page')
+        try:
+            followers = paginator.page(page)
+        except PageNotAnInteger:
+            followers = paginator.page(1)
+        except EmptyPage:
+            followers = paginator.page(paginator.num_pages)
+        context['followers'] = followers
+
+        following = Follow.objects.filter(follower=user_profile).select_related('following')
+        paginator = Paginator(following, 10)
+        page = request.GET.get('page')
+        try:
+            following = paginator.page(page)
+        except PageNotAnInteger:
+            following = paginator.page(1)
+        except EmptyPage:
+            following = paginator.page(paginator.num_pages)
+        context['following'] = following
+
+    # Extrair a lista de IDs dos usuários seguidos
+    followed_user_ids = list(request.user.followings.values_list("following_id", flat=True))
+    context['followed_user_ids'] = followed_user_ids
 
 
-from django.views.generic import DetailView
-
-class ProfileView(DetailView):
-    model = User
-    template_name = "user_profile.html"
-    context_object_name = "user_profile"
-    pk_url_kwarg = "user_id"
-    
-    def get(self, request, user_id):
-        user = get_object_or_404(User, id=user_id)
-        tweets = Tweet.objects.filter(user=user).order_by("-created_at")
-        is_following = Follow.objects.filter(follower=request.user, following=user).exists()
-        follower_count = user.followers.count()
-        following_count = user.followings.count()
-
-        context = {
-            "user_profile": user,
-            "tweets": tweets,
-            "is_following": is_following,
-            "follower_count": follower_count,
-            "following_count": following_count,
-        }
-        return render(request, "user_profile.html", context)
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user_profile = self.get_object()
@@ -226,7 +344,9 @@ class ProfileView(DetailView):
         context["is_following"] = Follow.objects.filter(follower=self.request.user, following=user_profile).exists()
         context["follower_count"] = user_profile.followers.count()
         context["following_count"] = user_profile.followings.count()
-        return context
+    
+
+    return render(request, "perfil.html", context)
 
 
 @login_required
@@ -235,7 +355,7 @@ def follow_user(request, user_id):
 
     if request.user == user_to_follow:
         messages.warning(request, "Você não pode seguir a si mesmo.")
-        return redirect("user_profile", user_id=user_to_follow.id)
+        return redirect("profile", user_id=user_to_follow.id)
 
     with transaction.atomic():  # Garante que ambas as operações sejam atômicas
         follow, created = Follow.objects.get_or_create(
@@ -248,7 +368,7 @@ def follow_user(request, user_id):
             follow.delete()
             messages.success(request, f"Você deixou de seguir {user_to_follow.username}.")
 
-    return redirect("user_profile", user_id=user_to_follow.id)
+    return redirect("profile", user_id=user_to_follow.id)
 
 
 def get_tweet(request, tweet_id):
@@ -311,3 +431,5 @@ def suggested_users(request):
     }
 
     return render(request, "suggested_users.html", context)
+
+
