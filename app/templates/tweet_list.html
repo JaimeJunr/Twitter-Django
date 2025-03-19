@@ -1,241 +1,300 @@
-{% load static %}
-{% block content %}
-  <!-- Modal de Retweet -->
-  <div class="modal fade"
-       id="retweetModal"
-       tabindex="-1"
-       aria-labelledby="retweetModalLabel"
-       aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="retweetModalLabel">Retweetar</h5>
-          <button type="button"
-                  class="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p id="originalTweetContent"></p>
-          <textarea id="retweetContent"
-                    rows="4"
-                    cols="50"
-                    placeholder="Adicione um comentário..."></textarea>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-primary" id="submitRetweet">Retweetar</button>
-        </div>
+{% load static %} {% block content %}
+<!-- Modal de Retweet -->
+<div
+  class="modal fade"
+  id="retweetModal"
+  tabindex="-1"
+  aria-labelledby="retweetModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="retweetModalLabel">Retweetar</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p id="originalTweetContent"></p>
+        <textarea
+          style="max-width: 100%"
+          id="retweetContent"
+          rows="4"
+          cols="50"
+          placeholder="Adicione um comentário..."
+        ></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" id="submitRetweet">
+          Retweetar
+        </button>
       </div>
     </div>
   </div>
-  <!-- Seção de Tweets -->
-  <section id="tweets" class="container col-md-9 my-4">
-    <ul class="list-group list-group-flush">
-      {% for tweet in tweets %}
-        <li class="list-group-item p-3 border rounded shadow-sm mb-3"
-            id="tweet-{{ tweet.id }}">
-          <div class="d-flex">
-            {% if tweet.user.image %}
-              <img src="{{ tweet.user.image.url }}"
-                   alt="{{ tweet.user.username }}"
-                   class="rounded-circle me-3"
-                   width="50"
-                   height="50" />
-            {% else %}
-              <img src="/media/default.png"
-                   alt="{{ tweet.user.username }}"
-                   class="rounded-circle me-3"
-                   width="50"
-                   height="50" />
-            {% endif %}
-            <div class="flex-grow-1 tweet-container">
-              <div class="d-flex justify-content-between">
-                <div>
-                  {% if user.id != tweet.user.id %}
-                    <a href="{% url 'profile' tweet.user.id %}" class="fw-bold text-dark">{{ tweet.user.username }}</a>
-                  {% else %}
-                    <a href="{% url 'profile' %}" class="fw-bold text-dark">{{ tweet.user.username }}</a>
-                  {% endif %}
-                  <span class="text-muted ms-2">@{{ tweet.user.username }} · {{ tweet.created_at | timesince }} ago</span>
-                </div>
-                <div>
-                  <small class="text-muted">{{ tweet.created_at }}</small>
-                </div>
-              </div>
-              <!-- Conteúdo do tweet ou retweet -->
-              {% if tweet.is_retweet %}
-                <div class="mb-1">
-                  <a href="{% url 'tweet' tweet.id %}"
-                     class="text-decoration-none text-dark tweet-link"
-                     style="max-width: 100%">
-                    {% if tweet.content %}<p id="tweet-content-{{ tweet.id }}" class="tweet-content">{{ tweet.content }}</p>{% endif %}
-                  </a>
-                  {% if tweet.original_tweet %}
-                    <a href="{% url 'tweet' tweet.original_tweet.id %}"
-                       class="text-decoration-none text-dark tweet-link">
-                      <p class="text-muted">
-                        Retweet de @{{ tweet.original_tweet.user.username }}:
-                        <br />
-                        <small id="tweet-retweet-{{ tweet.original_tweet.id }}"
-                               class="tweet-content"
-                               style="max-width: 100%">{{ tweet.original_tweet.content }}</small>
-                      </p>
-                    </a>
-                  {% else %}
-                    <p class="text-muted">Retweet original não encontrado.</p>
-                  {% endif %}
-                </div>
+</div>
+<!-- Seção de Tweets -->
+<section id="tweets" class="container col-md-9 my-4">
+  <ul class="list-group list-group-flush">
+    {% for tweet in tweets %}
+    <li
+      class="list-group-item p-3 border rounded shadow-sm mb-3"
+      id="tweet-{{ tweet.id }}"
+    >
+      <div class="d-flex">
+        {% if tweet.user.image %}
+        <img
+          src="{{ tweet.user.image.url }}"
+          alt="{{ tweet.user.username }}"
+          class="rounded-circle me-3"
+          width="50"
+          height="50"
+        />
+        {% else %}
+        <img
+          src="/media/default.png"
+          alt="{{ tweet.user.username }}"
+          class="rounded-circle me-3"
+          width="50"
+          height="50"
+        />
+        {% endif %}
+        <div class="flex-grow-1 tweet-container">
+          <div class="d-flex justify-content-between">
+            <div>
+              {% if user.id != tweet.user.id %}
+              <a
+                href="{% url 'profile' tweet.user.id %}"
+                class="fw-bold text-dark"
+                >{{ tweet.user.username }}</a
+              >
               {% else %}
-                <div class="mb-1">
-                  <a href="{% url 'tweet' tweet.id %}"
-                     class="text-decoration-none text-dark tweet-link">
-                    <p id="tweet-content-{{ tweet.id }}" class="tweet-content">{{ tweet.content }}</p>
-                  </a>
-                </div>
+              <a href="{% url 'profile' %}" class="fw-bold text-dark"
+                >{{ tweet.user.username }}</a
+              >
               {% endif %}
-              <div class="d-flex justify-content-between">
-                <div class="d-flex justify-content-start align-items-center mt-2"
-                     data-tweet-id="{{ tweet.id }}">
-                  <button id="like-button"
-                          class="btn btn-link text-muted p-0 me-3"
-                          data-liked="{% if tweet.id in liked_tweet_ids %}true{% else %}false{% endif %}">
-                    <i class="btn-link {% if tweet.id in liked_tweet_ids %}fas{% else %}far{% endif %} fa-heart"></i>
-                    <span id="like-count">{{ tweet.tweet_likes.count }}</span>
-                    <span id="like-text">
-                      {% if tweet.id in liked_tweet_ids %}
-                        Descurtir
-                      {% else %}
-                        Curtir
-                      {% endif %}
-                    </span>
-                  </button>
-                  <button id="retweet-button-{{ tweet.id }}"
-                          class="btn btn-link text-muted p-0 me-3"
-                          onclick="openRetweetModal({{ tweet.id }})">
-                    <i class="btn-link fas fa-retweet"></i>
-                    <span id="retweet-count-{{ tweet.id }}">{{ tweet.retweets.all.count }}</span>
-                  </button>
-                  <button class="btn btn-link text-muted p-0 me-3">
-                    <i class="btn-link fas fa-comment"></i>
-                    <span>{{ tweet.comments.count }}</span>
-                  </button>
-                </div>
-                {% if user.id == tweet.user.id %}
-                  <div class="dropdown ms-3">
-                    <button class="btn btn-link dropdown-toggle text-muted p-0"
-                            type="button"
-                            data-bs-toggle="dropdown"
-                            aria-haspopup="true"
-                            aria-expanded="false">
-                      <i class="btn-link far fa-ellipsis-v"></i>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-end">
-                      <a class="dropdown-item">Editar tweet</a>
-                      <a class="dropdown-item delete-tweet-link"
-                         data-tweet-id="{{ tweet.id }}">Deletar tweet</a>
-                    </div>
-                  </div>
-                {% endif %}
-              </div>
+              <span class="text-muted ms-2"
+                >@{{ tweet.user.username }} · {{ tweet.created_at | timesince }}
+                ago</span
+              >
+            </div>
+            <div>
+              <small class="text-muted">{{ tweet.created_at }}</small>
             </div>
           </div>
-        </li>
-      {% empty %}
-        <li class="list-group-item">Nenhum tweet disponível.</li>
-      {% endfor %}
-    </ul>
-    {% if tweets.has_other_pages %}
-      <div class="pagination">
-        <span class="step-links">
-          {% if tweets.has_previous %}
-            <a href="?page=1">&laquo; Primeira</a>
-            <a href="?page={{ tweets.previous_page_number }}">Anterior</a>
+          <!-- Conteúdo do tweet ou retweet -->
+          {% if tweet.is_retweet %}
+          <div class="mb-1">
+            <a
+              href="{% url 'tweet' tweet.id %}"
+              class="text-decoration-none text-dark tweet-link"
+              style="max-width: 100%"
+            >
+              {% if tweet.content %}
+              <p id="tweet-content-{{ tweet.id }}" class="tweet-content">
+                {{ tweet.content }}
+              </p>
+              {% endif %}
+            </a>
+            {% if tweet.original_tweet %}
+            <a
+              href="{% url 'tweet' tweet.original_tweet.id %}"
+              class="text-decoration-none text-dark tweet-link"
+            >
+              <p class="text-muted">
+                Retweet de @{{ tweet.original_tweet.user.username }}:
+                <br />
+                <small
+                  id="tweet-retweet-{{ tweet.original_tweet.id }}"
+                  class="tweet-content"
+                  style="max-width: 100%"
+                  >{{ tweet.original_tweet.content }}</small
+                >
+              </p>
+            </a>
+            {% else %}
+            <p class="text-muted">Retweet original não encontrado.</p>
+            {% endif %}
+          </div>
+          {% else %}
+          <div class="mb-1">
+            <a
+              href="{% url 'tweet' tweet.id %}"
+              class="text-decoration-none text-dark tweet-link"
+            >
+              <p id="tweet-content-{{ tweet.id }}" class="tweet-content">
+                {{ tweet.content }}
+              </p>
+            </a>
+          </div>
           {% endif %}
-          <span class="current">Página {{ tweets.number }} de {{ tweets.paginator.num_pages }}.</span>
-          {% if tweets.has_next %}
-            <a href="?page={{ tweets.next_page_number }}">Próxima</a>
-            <a href="?page={{ tweets.paginator.num_pages }}">Última &raquo;</a>
-          {% endif %}
-        </span>
+          <div class="d-flex justify-content-between">
+            <div
+              class="d-flex justify-content-start align-items-center mt-2"
+              data-tweet-id="{{ tweet.id }}"
+            >
+              <button
+                id="like-button"
+                class="btn btn-link text-muted p-0 me-3"
+                data-liked="{% if tweet.id in liked_tweet_ids %}true{% else %}false{% endif %}"
+              >
+                <i
+                  class="btn-link {% if tweet.id in liked_tweet_ids %}fas{% else %}far{% endif %} fa-heart"
+                ></i>
+                <span id="like-count">{{ tweet.tweet_likes.count }}</span>
+                <span id="like-text">
+                  {% if tweet.id in liked_tweet_ids %} Descurtir {% else %}
+                  Curtir {% endif %}
+                </span>
+              </button>
+              <button
+                id="retweet-button-{{ tweet.id }}"
+                class="btn btn-link text-muted p-0 me-3"
+                onclick="openRetweetModal({{ tweet.id }})"
+              >
+                <i class="btn-link fas fa-retweet"></i>
+                <span id="retweet-count-{{ tweet.id }}"
+                  >{{ tweet.retweets.all.count }}</span
+                >
+              </button>
+              <button class="btn btn-link text-muted p-0 me-3">
+                <i class="btn-link fas fa-comment"></i>
+                <span>{{ tweet.comments.count }}</span>
+              </button>
+            </div>
+            {% if user.id == tweet.user.id %}
+            <div class="dropdown ms-3">
+              <button
+                class="btn btn-link dropdown-toggle text-muted p-0"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                <i class="btn-link far fa-ellipsis-v"></i>
+              </button>
+              <div class="dropdown-menu dropdown-menu-end">
+                <a class="dropdown-item">Editar tweet</a>
+                <a
+                  class="dropdown-item delete-tweet-link"
+                  data-tweet-id="{{ tweet.id }}"
+                  >Deletar tweet</a
+                >
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
       </div>
-    {% endif %}
-  </section>
-{% endblock content %}
-{% block extra_css %}
-  <!-- Recomenda-se mover esses estilos para um arquivo CSS próprio (ex: tweet.css) -->
-  <link rel="stylesheet" href="{% static 'css/tweet.css' %}" />
-  <style>
-      .tweet-container {
-          flex: 1;
-          min-width: 0;
+    </li>
+    {% empty %}
+    <li class="list-group-item">Nenhum tweet disponível.</li>
+    {% endfor %}
+  </ul>
+  {% if tweets.has_other_pages %}
+  <div class="pagination">
+    <span class="step-links">
+      {% if tweets.has_previous %}
+      <a href="?page=1">&laquo; Primeira</a>
+      <a href="?page={{ tweets.previous_page_number }}">Anterior</a>
+      {% endif %}
+      <span class="current"
+        >Página {{ tweets.number }} de {{ tweets.paginator.num_pages }}.</span
+      >
+      {% if tweets.has_next %}
+      <a href="?page={{ tweets.next_page_number }}">Próxima</a>
+      <a href="?page={{ tweets.paginator.num_pages }}">Última &raquo;</a>
+      {% endif %}
+    </span>
+  </div>
+  {% endif %}
+</section>
+{% endblock content %} {% block extra_css %}
+<!-- Recomenda-se mover esses estilos para um arquivo CSS próprio (ex: tweet.css) -->
+<link rel="stylesheet" href="{% static 'css/tweet.css' %}" />
+<style>
+  .tweet-container {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tweet-link {
+    display: block;
+    max-width: 100%;
+  }
+
+  .tweet-content {
+    word-wrap: break-word;
+    white-space: normal;
+  }
+</style>
+{% endblock extra_css %} {% block extra_js %}
+<!-- Scripts externos para modularidade -->
+<script src="{% static 'js/like.js' %}"></script>
+<script src="{% static 'js/retweet.js' %}"></script>
+<script src="{% static 'js/delete.js' %}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modal = new bootstrap.Modal(document.getElementById("retweetModal"));
+    const csrfToken = "{{ csrf_token }}"; // Obter o token CSRF
+
+    // Listener para botões de retweet
+    document.querySelectorAll(".btn-link").forEach((button) => {
+      if (button.id.startsWith("retweet-button-")) {
+        button.addEventListener("click", () => {
+          const tweetId = button.id.split("-")[2]; // Obtém o tweetId do ID do botão
+          openRetweetModal(tweetId, csrfToken, modal);
+        });
       }
+    });
 
-      .tweet-link {
-          display: block;
-          max-width: 100%;
-      }
-
-      .tweet-content {
-          word-wrap: break-word;
-          white-space: normal;
-      }
-  </style>
-{% endblock extra_css %}
-{% block extra_js %}
-  <!-- Scripts externos para modularidade -->
-  <script src="{% static 'js/like.js' %}"></script>
-  <script src="{% static 'js/retweet.js' %}"></script>
-  <script src="{% static 'js/delete.js' %}"></script>
-  <script>
-      document.addEventListener("DOMContentLoaded", function() {
-          const modal = new bootstrap.Modal(document.getElementById("retweetModal"));
-          const csrfToken = "{{ csrf_token }}"; // Obter o token CSRF
-
-          // Listener para botões de retweet
-          document.querySelectorAll(".btn-link").forEach((button) => {
-              if (button.id.startsWith("retweet-button-")) {
-                  button.addEventListener("click", () => {
-                      const tweetId = button.id.split("-")[2]; // Obtém o tweetId do ID do botão
-                      openRetweetModal(tweetId, csrfToken, modal);
-                  });
-              }
-          });
-
-          // Listener para botões de like
-          document.querySelectorAll("#like-button").forEach((button) => {
-              button.addEventListener("click", function() {
-                  const tweetId = button.closest("div").dataset.tweetId;
-                  const likeCountElement = this.querySelector("#like-count");
-                  const textElement = this.querySelector("#like-text");
-                  const iconElement = this.querySelector("i");
-                  handleLikeButtonClick(this, tweetId, csrfToken, textElement, likeCountElement, iconElement);
-              });
-          });
-
-          // Listener para deleção de tweet
-          document.querySelectorAll('.delete-tweet-link').forEach(link => {
-              link.addEventListener('click', function(event) {
-                  event.preventDefault();
-                  const tweetId = this.dataset.tweetId;
-                  if (confirm('Tem certeza que deseja deletar este tweet?')) {
-                      fetch(`tweet/${tweetId}/delete`, {
-                              method: 'POST',
-                              headers: {
-                                  'X-CSRFToken': csrfToken
-                              }
-                          })
-                          .then(response => {
-                              if (response.ok) {
-                                  document.getElementById(`tweet-${tweetId}`).remove();
-                              } else {
-                                  alert('Erro ao deletar o tweet.');
-                              }
-                          })
-                          .catch(error => console.error('Erro:', error));
-                  }
-              });
-          });
+    // Listener para botões de like
+    document.querySelectorAll("#like-button").forEach((button) => {
+      button.addEventListener("click", function () {
+        const tweetId = button.closest("div").dataset.tweetId;
+        const likeCountElement = this.querySelector("#like-count");
+        const textElement = this.querySelector("#like-text");
+        const iconElement = this.querySelector("i");
+        handleLikeButtonClick(
+          this,
+          tweetId,
+          csrfToken,
+          textElement,
+          likeCountElement,
+          iconElement
+        );
       });
-  </script>
+    });
+
+    // Listener para deleção de tweet
+    document.querySelectorAll(".delete-tweet-link").forEach((link) => {
+      link.addEventListener("click", function (event) {
+        event.preventDefault();
+        const tweetId = this.dataset.tweetId;
+        if (confirm("Tem certeza que deseja deletar este tweet?")) {
+          fetch(`tweet/${tweetId}/delete`, {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": csrfToken,
+            },
+          })
+            .then((response) => {
+              if (response.ok) {
+                document.getElementById(`tweet-${tweetId}`).remove();
+              } else {
+                alert("Erro ao deletar o tweet.");
+              }
+            })
+            .catch((error) => console.error("Erro:", error));
+        }
+      });
+    });
+  });
+</script>
 {% endblock extra_js %}
