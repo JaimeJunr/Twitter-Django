@@ -1,58 +1,75 @@
 <div class="col-md-9">
-    <div class="container card shadow-sm mb-4">
-        <ul class="list-group list-group-flush">
-            {% for follow in followers %}
-                <li class="list-group-item d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center">
-                        {% if follow.follower.image %}
-                            <img src="{{ follow.follower.image.url }}"
-                                 class="rounded-circle me-3"
-                                 width="50"
-                                 height="50"
-                                 alt="Profile" />
-                        {% else %}
-                            <img src="/media/user_images/default.png"
-                                 class="rounded-circle me-3"
-                                 width="50"
-                                 height="50"
-                                 alt="Profile" />
-                        {% endif %}
-                        <div>
-                            <a href="{% url 'profile' %}?user_id={{ follow.follower.id }}"
-                               class="text-decoration-none fw-bold">{{ follow.follower.username }}</a>
-                            {% if follow.follower.bio %}<p class="mb-0 text-muted small">{{ follow.follower.bio }}</p>{% endif %}
-                        </div>
-                    </div>
-                    {% if user != follow.follower %}
-                        <form method="post" action="{% url 'follow_user' follow.follower.id %}">
-                            {% csrf_token %}
-                            {% if follow.follower.id in followed_user_ids %}
-                                <button type="submit" class="btn btn-danger btn-sm">Deixar de Seguir</button>
-                            {% else %}
-                                <button type="submit" class="btn btn-primary btn-sm">Seguir</button>
-                            {% endif %}
-                        </form>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-        {% if followers.has_other_pages %}
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center">
-                    {% if followers.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link"
-                               href="?tab=followers&page={{ followers.previous_page_number }}">Anterior</a>
-                        </li>
-                    {% endif %}
-                    {% if followers.has_next %}
-                        <li class="page-item">
-                            <a class="page-link"
-                               href="?tab=followers&page={{ followers.next_page_number }}">Próximo</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
+  <div class="container card shadow-sm mb-4">
+    <ul class="list-group list-group-flush">
+      {% for follow in followers %}
+      <li
+        class="list-group-item d-flex align-items-center justify-content-between"
+      >
+        <div class="d-flex align-items-center">
+          {% if follow.follower.image %}
+          <img
+            src="{{ follow.follower.image.url }}"
+            class="rounded-circle me-3"
+            width="50"
+            height="50"
+            alt="Profile"
+          />
+          {% else %}
+          <img
+            src="/media/user_images/default.png"
+            class="rounded-circle me-3"
+            width="50"
+            height="50"
+            alt="Profile"
+          />
+          {% endif %}
+          <div>
+            <a
+              href="{% url 'profile' %}?user_id={{ follow.follower.id }}"
+              class="text-decoration-none fw-bold"
+              >{{ follow.follower.username }}</a
+            >
+            {% if follow.follower.bio %}
+            <p class="mb-0 text-muted small">{{ follow.follower.bio }}</p>
+            {% endif %}
+          </div>
+        </div>
+        {% if user != follow.follower %}
+        <form method="post" action="{% url 'follow_user' follow.follower.id %}">
+          {% csrf_token %} {% if follow.follower.id in followed_user_ids %}
+          <button type="submit" class="btn btn-danger btn-sm">
+            Deixar de Seguir
+          </button>
+          {% else %}
+          <button type="submit" class="btn btn-primary btn-sm">Seguir</button>
+          {% endif %}
+        </form>
         {% endif %}
-    </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% if followers.has_other_pages %}
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center">
+        {% if followers.has_previous %}
+        <li class="page-item">
+          <a
+            class="page-link"
+            href="?tab=followers&page={{ followers.previous_page_number }}"
+            >Anterior</a
+          >
+        </li>
+        {% endif %} {% if followers.has_next %}
+        <li class="page-item">
+          <a
+            class="page-link"
+            href="?tab=followers&page={{ followers.next_page_number }}"
+            >Próximo</a
+          >
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
 </div>
