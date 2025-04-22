@@ -24,7 +24,7 @@ Este projeto foi desenvolvido com as seguintes tecnologias:
 ## 🐜 Funcionalidades
 
 ✔ Criar conta e fazer login/logout  
-✔ Publicar, editar e excluir tweets  
+✔ Publicar e excluir tweets  
 ✔ Seguir e deixar de seguir usuários  
 ✔ Curtir e comentar tweets  
 ✔ Buscar tweets e perfis
